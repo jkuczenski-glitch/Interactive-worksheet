@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bronco Digital Scavenger Hunt</title>
+  <style>
+    :root {
+      --ink: #20242a;
+      --muted: #6a717c;
+      --line: #d7dce3;
+      --panel: #f6f7f9;
+      --accent: #a32035;
+      --accent-quiet: #f8e8eb;
+      --paper: #fffdf8;
+      --shadow: 0 18px 50px rgba(24, 35, 52, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: #edf0f4;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 18px;
+      border-bottom: 1px solid #dfe3e8;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 3;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 230px;
+      font-weight: 720;
+      font-size: 15px;
+    }
+
+    .mark {
+      width: 42px;
+      height: 30px;
+      border-radius: 7px;
+      display: grid;
+      place-items: center;
+      background: #a32035;
+      color: white;
+      font-weight: 800;
+    }
+
+    .tools {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    button,
+    select,
+    input[type="color"] {
+      height: 38px;
+      border: 1px solid #cfd5dd;
+      background: white;
+      color: var(--ink);
+      border-radius: 7px;
+      font: inherit;
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    button:hover {
+      border-color: #aeb8c4;
+      background: #fafbfc;
+    }
+
+    button.active {
+      border-color: #82b7ec;
+      background: var(--accent-quiet);
+      color: #084f99;
+    }
+
+    button.icon {
+      width: 38px;
+      padding: 0;
+    }
+
+    select {
+      min-width: 122px;
+      padding: 0 34px 0 10px;
+    }
+
+    input[type="color"] {
+      width: 42px;
+      padding: 4px;
+      cursor: pointer;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 270px;
+      gap: 18px;
+      padding: 18px;
+      min-height: 0;
+    }
+
+    .stage-wrap {
+      min-width: 0;
+      overflow: auto;
+      border: 1px solid #d8dde4;
+      border-radius: 8px;
+      background:
+        linear-gradient(45deg, #e4e8ed 25%, transparent 25%),
+        linear-gradient(-45deg, #e4e8ed 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e4e8ed 75%),
+        linear-gradient(-45deg, transparent 75%, #e4e8ed 75%);
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+      background-size: 20px 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .stage {
+      width: min(100%, 980px);
+      min-width: 760px;
+      margin: 20px auto;
+      position: relative;
+      aspect-ratio: 8.5 / 17;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 4px;
+      background: var(--paper);
+      cursor: crosshair;
+    }
+
+    #textEditor {
+      position: absolute;
+      z-index: 2;
+      display: none;
+      min-width: 110px;
+      max-width: calc(100% - 24px);
+      min-height: 34px;
+      resize: none;
+      overflow: hidden;
+      border: 2px solid var(--accent);
+      border-radius: 6px;
+      padding: 5px 7px;
+      background: rgba(255, 255, 255, 0.96);
+      color: var(--ink);
+      font-family: "Segoe UI", Arial, sans-serif;
+      outline: none;
+      box-shadow: 0 8px 24px rgba(11, 107, 203, 0.18);
+    }
+
+    .side {
+      align-self: start;
+      display: grid;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .panel {
+      padding: 14px;
+      border: 1px solid #d8dde4;
+      border-radius: 8px;
+      background: white;
+    }
+
+    .panel h2 {
+      margin: 0 0 8px;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.3;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .field-grid label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .field-grid input {
+      width: 100%;
+      height: 36px;
+      border: 1px solid #cfd5dd;
+      border-radius: 7px;
+      padding: 0 8px;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .status {
+      min-height: 20px;
+      color: #43617d;
+      font-size: 13px;
+    }
+
+    @media (max-width: 960px) {
+      .toolbar,
+      .workspace {
+        padding: 12px;
+      }
+
+      .toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .tools {
+        justify-content: flex-start;
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .stage {
+        min-width: 620px;
+        margin: 12px;
+      }
+    }
+
+    .links {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .links a {
+      display: block;
+      padding: 9px 10px;
+      border: 1px solid #d9dee5;
+      border-radius: 7px;
+      color: #8d1b2d;
+      background: #fffafa;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .links a:hover {
+      border-color: #bd8b95;
+      background: #fdf0f2;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="toolbar">
+      <div class="brand">
+        <span class="mark">SCU</span>
+        <span>Bronco Digital Scavenger Hunt</span>
+      </div>
+      <div class="tools" aria-label="Worksheet tools">
+        <button id="selectTool" class="active" title="Select and edit text">Select</button>
+        <button id="textTool" title="Click the worksheet to add text">Text</button>
+        <button id="penTool" title="Draw on the worksheet">Pen</button>
+        <input id="colorPicker" type="color" value="#20242a" title="Ink color">
+        <select id="fontSize" title="Text size">
+          <option value="18">18 px</option>
+          <option value="22" selected>22 px</option>
+          <option value="28">28 px</option>
+          <option value="36">36 px</option>
+        </select>
+        <button id="undoButton" class="icon" title="Undo">↶</button>
+        <button id="clearButton" title="Clear answers">Clear</button>
+        <button id="downloadButton" title="Download worksheet as an image">Download PNG</button>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <div class="stage-wrap">
+        <div class="stage" id="stage">
+          <canvas id="worksheet" width="1700" height="3400" aria-label="Interactive worksheet canvas"></canvas>
+          <textarea id="textEditor" spellcheck="true" aria-label="Worksheet text entry"></textarea>
+        </div>
+      </div>
+
+      <aside class="side">
+        <section class="panel">
+          <h2>Canvas Entry</h2>
+          Click any answer area, type your response, then press Enter or click elsewhere. Use Select to click existing text and edit it.
+        </section>
+        <section class="panel">
+          <h2>Open Resources</h2>
+          <div class="links">
+            <a href="https://www.scu.edu/map/" target="_blank" rel="noreferrer">SCU Interactive Campus Map</a>
+            <a href="https://www.scu.edu/login" target="_blank" rel="noreferrer">MySCU Portal</a>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Worksheet Details</h2>
+          <div class="field-grid">
+            <label>Name <input id="studentName" placeholder="Student"></label>
+            <label>Date <input id="worksheetDate" placeholder="Date"></label>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Status</h2>
+          <div id="status" class="status">Ready.</div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.querySelector("#worksheet");
+    const ctx = canvas.getContext("2d");
+    const stage = document.querySelector("#stage");
+    const editor = document.querySelector("#textEditor");
+    const statusEl = document.querySelector("#status");
+    const nameInput = document.querySelector("#studentName");
+    const dateInput = document.querySelector("#worksheetDate");
+    const buttons = {
+      select: document.querySelector("#selectTool"),
+      text: document.querySelector("#textTool"),
+      pen: document.querySelector("#penTool")
+    };
+    const colorPicker = document.querySelector("#colorPicker");
+    const fontSize = document.querySelector("#fontSize");
+
+    const state = {
+      tool: "select",
+      textItems: [],
+      strokes: [],
+      history: [],
+      activeTextId: null,
+      drawing: false,
+      currentStroke: null
+    };
+
+    const sections = [
+      {
+        title: "Part 1: Physical Campus Landmarks",
+        questions: [
+          {
+            number: "1",
+            prompt: [
+              "The Heart of Campus: Locate the historic building with a beautiful rose garden in front of it.",
+              "It serves as both the geographic and spiritual center of SCU."
+            ],
+            answerLabel: "Your Answer (Building Name):",
+            height: 250
+          },
+          {
+            number: "2",
+            prompt: [
+              "The Food & Hub Hunt: Look up the Benson Memorial Center. Name the specific spots inside Benson where you would go to:",
+              "a. Grab a main meal using your BroncoExpress points",
+              "b. Get a late-night snack or an acai bowl in the basement",
+              "c. Find the office to join student clubs or student government"
+            ],
+            answerLabel: "Your Answers:",
+            height: 390
+          },
+          {
+            number: "3",
+            prompt: [
+              "The Tech Emergency Room: Your laptop loses Wi-Fi during your first week.",
+              "Where is the Technology Help Desk located? Include the building and floor."
+            ],
+            note: "Bronco Tip: The library is officially called the Harrington Learning Commons. The tech support crew is on the first floor.",
+            answerLabel: "Building and Floor:",
+            height: 300
+          }
+        ]
+      },
+      {
+        title: "Part 2: Navigating the Digital SCU Ecosystem",
+        questions: [
+          {
+            number: "4",
+            prompt: [
+              "Camino vs. Workday: Based on your MySCU portal tiles, which app would you open to do each task?",
+              "a. Check official final grades, view financial aid, or register for classes",
+              "b. Download a syllabus, submit homework, or check mid-quarter quiz scores"
+            ],
+            answerLabel: "Apps:",
+            height: 330
+          },
+          {
+            number: "5",
+            prompt: [
+              "The Gatekeeper: When logging into SCU accounts from a new computer, you are prompted for a mandatory security check.",
+              "What is the name of the 2-factor authentication app you must download on your phone?"
+            ],
+            answerLabel: "App Name:",
+            height: 250
+          }
+        ]
+      },
+      {
+        title: "Part 3: Knowing Your Resources",
+        questions: [
+          {
+            number: "6",
+            prompt: [
+              "Health & Immunizations: You need to submit mandatory health and immunization forms before classes start.",
+              "What is the name of the campus health center, and what major building is it across the street from?"
+            ],
+            answerLabel: "Health Center and Nearby Building:",
+            height: 300
+          },
+          {
+            number: "7",
+            prompt: [
+              "Academic Guidance: You want to talk to an advisor about changing your major or sign up for a free peer tutor.",
+              "What is the name of the central academic advising center, and what hall is it located in?"
+            ],
+            answerLabel: "Center and Hall:",
+            height: 280
+          }
+        ]
+      },
+      {
+        title: "Part 4: Personal Discernment Reflection",
+        questions: [
+          {
+            number: "8",
+            prompt: [
+              "Your First Footprint: Browse the campus map or SCU website one last time.",
+              "Identify one specific physical space you are most excited to see in person. What drew you to that space?"
+            ],
+            answerLabel: "Your Response:",
+            height: 390
+          }
+        ]
+      }
+    ];
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    function scalePoint(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) * (canvas.width / rect.width),
+        y: (event.clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    function toCssRect(item) {
+      const canvasRect = canvas.getBoundingClientRect();
+      const stageRect = stage.getBoundingClientRect();
+      const sx = canvasRect.width / canvas.width;
+      const sy = canvasRect.height / canvas.height;
+      return {
+        left: canvasRect.left - stageRect.left + item.x * sx,
+        top: canvasRect.top - stageRect.top + (item.y - item.size) * sy,
+        width: Math.max(120, item.width * sx),
+        fontSize: item.size * sy
+      };
+    }
+
+    function snapshot() {
+      state.history.push({
+        textItems: structuredClone(state.textItems),
+        strokes: structuredClone(state.strokes)
+      });
+      if (state.history.length > 40) state.history.shift();
+    }
+
+    function restore(last) {
+      state.textItems = structuredClone(last.textItems);
+      state.strokes = structuredClone(last.strokes);
+      render();
+    }
+
+    function setTool(tool) {
+      commitEditor();
+      state.tool = tool;
+      Object.entries(buttons).forEach(([name, button]) => {
+        button.classList.toggle("active", name === tool);
+      });
+      canvas.style.cursor = tool === "pen" ? "crosshair" : "text";
+      setStatus(tool === "pen" ? "Pen ready." : "Click the worksheet to type.");
+    }
+
+    function wrapText(text, maxWidth, size, weight = "") {
+      ctx.font = `${weight} ${size}px "Segoe UI", Arial, sans-serif`.trim();
+      const paragraphs = text.split("\n");
+      const lines = [];
+      paragraphs.forEach((paragraph) => {
+        const words = paragraph.split(/\s+/).filter(Boolean);
+        if (!words.length) {
+          lines.push("");
+          return;
+        }
+        let line = "";
+        words.forEach((word) => {
+          const test = line ? `${line} ${word}` : word;
+          if (ctx.measureText(test).width > maxWidth && line) {
+            lines.push(line);
+            line = word;
+          } else {
+            line = test;
+          }
+        });
+        lines.push(line);
+      });
+      return lines;
+    }
+
+    function drawWrappedText(text, x, y, maxWidth, size, options = {}) {
+      const weight = options.weight || "";
+      const lineHeight = options.lineHeight || size * 1.32;
+      ctx.font = `${weight} ${size}px "Segoe UI", Arial, sans-serif`.trim();
+      ctx.fillStyle = options.color || "#20242a";
+      const lines = wrapText(text, maxWidth, size, weight);
+      lines.forEach((line, index) => {
+        ctx.fillText(line, x, y + index * lineHeight);
+      });
+      return lines.length * lineHeight;
+    }
+
+    function drawTemplate() {
+      ctx.fillStyle = "#fffdf8";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#a32035";
+      ctx.fillRect(0, 0, canvas.width, 28);
+
+      ctx.fillStyle = "#20242a";
+      ctx.font = "700 58px Georgia, serif";
+      ctx.fillText("The Bronco Digital Scavenger Hunt", 120, 125);
+
+      ctx.fillStyle = "#59616d";
+      ctx.font = "27px Segoe UI, Arial, sans-serif";
+      ctx.fillText("Explore Santa Clara University's campus landmarks, digital tools, and student resources.", 120, 175);
+
+      ctx.strokeStyle = "#cbd3dd";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(120, 268);
+      ctx.lineTo(740, 268);
+      ctx.moveTo(1030, 268);
+      ctx.lineTo(1580, 268);
+      ctx.stroke();
+
+      ctx.fillStyle = "#59616d";
+      ctx.font = "600 26px Segoe UI, Arial, sans-serif";
+      ctx.fillText("Name", 120, 253);
+      ctx.fillText("Date", 1030, 253);
+
+      let y = 360;
+      sections.forEach((section) => {
+        ctx.fillStyle = "#a32035";
+        ctx.font = "700 31px Georgia, serif";
+        ctx.fillText(section.title, 120, y);
+        y += 55;
+
+        section.questions.forEach((question) => {
+          const cardTop = y - 35;
+          ctx.fillStyle = "#ffffff";
+          ctx.strokeStyle = "#e0d6cf";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.roundRect(100, cardTop, 1500, question.height, 8);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = "#a32035";
+          ctx.font = "700 34px Segoe UI, Arial, sans-serif";
+          ctx.fillText(question.number, 135, y + 8);
+
+          let textY = y;
+          question.prompt.forEach((line, index) => {
+            textY += drawWrappedText(line, 190, textY, 1340, index === 0 ? 27 : 25, {
+              weight: index === 0 ? "650" : "",
+              color: index === 0 ? "#20242a" : "#4f5864",
+              lineHeight: index === 0 ? 37 : 34
+            });
+            textY += index === 0 ? 5 : 1;
+          });
+
+          if (question.note) {
+            ctx.fillStyle = "#f8e8eb";
+            ctx.fillRect(190, textY + 10, 1340, 64);
+            drawWrappedText(question.note, 215, textY + 50, 1290, 22, {
+              color: "#70333c",
+              lineHeight: 28
+            });
+            textY += 92;
+          }
+
+          const lineTop = Math.max(textY + 45, cardTop + question.height - 112);
+          ctx.fillStyle = "#59616d";
+          ctx.font = "650 24px Segoe UI, Arial, sans-serif";
+          ctx.fillText(question.answerLabel, 135, lineTop - 18);
+
+          ctx.strokeStyle = "#aeb8c4";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(135, lineTop);
+          ctx.lineTo(1565, lineTop);
+          ctx.moveTo(135, lineTop + 70);
+          ctx.lineTo(1565, lineTop + 70);
+          ctx.stroke();
+
+          y = cardTop + question.height + 72;
+        });
+
+        y += 20;
+      });
+
+      ctx.fillStyle = "#7b8490";
+      ctx.font = "22px Segoe UI, Arial, sans-serif";
+      ctx.fillText("Tip: use the links beside the worksheet, then click answer lines to type directly on this canvas.", 120, 3315);
+    }
+
+    function drawHeaderFields() {
+      ctx.fillStyle = "#20242a";
+      ctx.font = "28px Segoe UI, Arial, sans-serif";
+      ctx.fillText(nameInput.value, 220, 253);
+      ctx.fillText(dateInput.value, 1120, 253);
+    }
+
+    function drawTextItem(item, selected = false) {
+      const lines = wrapText(item.text, item.width, item.size);
+      const lineHeight = item.size * 1.25;
+      ctx.font = `${item.size}px "Segoe UI", Arial, sans-serif`;
+      ctx.fillStyle = item.color;
+      ctx.textBaseline = "alphabetic";
+      lines.forEach((line, index) => {
+        ctx.fillText(line, item.x, item.y + index * lineHeight);
+      });
+      if (selected) {
+        ctx.strokeStyle = "#0b6bcb";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 5]);
+        ctx.strokeRect(item.x - 10, item.y - item.size - 10, item.width + 20, lines.length * lineHeight + 20);
+        ctx.setLineDash([]);
+      }
+    }
+
+    function drawStroke(stroke) {
+      if (stroke.points.length < 2) return;
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = stroke.width;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+      stroke.points.slice(1).forEach((point) => ctx.lineTo(point.x, point.y));
+      ctx.stroke();
+    }
+
+    function render() {
+      drawTemplate();
+      drawHeaderFields();
+      state.strokes.forEach(drawStroke);
+      state.textItems.forEach((item) => drawTextItem(item, item.id === state.activeTextId && editor.style.display === "none"));
+    }
+
+    function hitText(point) {
+      for (let i = state.textItems.length - 1; i >= 0; i -= 1) {
+        const item = state.textItems[i];
+        const lines = wrapText(item.text || " ", item.width, item.size);
+        const height = Math.max(item.size * 1.4, lines.length * item.size * 1.25);
+        if (point.x >= item.x - 12 && point.x <= item.x + item.width + 12 && point.y >= item.y - item.size - 12 && point.y <= item.y + height) {
+          return item;
+        }
+      }
+      return null;
+    }
+
+    function beginEditor(item) {
+      state.activeTextId = item.id;
+      const css = toCssRect(item);
+      editor.value = item.text;
+      editor.style.left = `${css.left}px`;
+      editor.style.top = `${css.top}px`;
+      editor.style.width = `${css.width}px`;
+      editor.style.fontSize = `${css.fontSize}px`;
+      editor.style.color = item.color;
+      editor.style.display = "block";
+      editor.focus();
+      editor.select();
+      autoSizeEditor();
+      render();
+    }
+
+    function createText(point) {
+      snapshot();
+      const item = {
+        id: crypto.randomUUID(),
+        x: Math.min(point.x, canvas.width - 520),
+        y: point.y,
+        width: Math.max(420, Math.min(1260, canvas.width - point.x - 120)),
+        size: Number(fontSize.value),
+        color: colorPicker.value,
+        text: ""
+      };
+      state.textItems.push(item);
+      beginEditor(item);
+    }
+
+    function commitEditor() {
+      if (editor.style.display === "none") return;
+      const item = state.textItems.find((entry) => entry.id === state.activeTextId);
+      if (item) {
+        item.text = editor.value.trim();
+        if (!item.text) {
+          state.textItems = state.textItems.filter((entry) => entry.id !== item.id);
+        }
+      }
+      editor.style.display = "none";
+      state.activeTextId = null;
+      render();
+    }
+
+    function autoSizeEditor() {
+      editor.style.height = "auto";
+      editor.style.height = `${Math.max(34, editor.scrollHeight + 2)}px`;
+    }
+
+    canvas.addEventListener("pointerdown", (event) => {
+      const point = scalePoint(event);
+      if (state.tool === "pen") {
+        commitEditor();
+        snapshot();
+        state.drawing = true;
+        state.currentStroke = {
+          color: colorPicker.value,
+          width: 5,
+          points: [point]
+        };
+        state.strokes.push(state.currentStroke);
+        canvas.setPointerCapture(event.pointerId);
+        return;
+      }
+
+      const item = hitText(point);
+      if (item) {
+        beginEditor(item);
+        return;
+      }
+      if (state.tool === "text" || state.tool === "select") {
+        createText(point);
+      }
+    });
+
+    canvas.addEventListener("pointermove", (event) => {
+      if (!state.drawing || !state.currentStroke) return;
+      state.currentStroke.points.push(scalePoint(event));
+      render();
+    });
+
+    canvas.addEventListener("pointerup", (event) => {
+      if (!state.drawing) return;
+      state.drawing = false;
+      state.currentStroke = null;
+      canvas.releasePointerCapture(event.pointerId);
+      setStatus("Stroke added.");
+    });
+
+    editor.addEventListener("input", autoSizeEditor);
+    editor.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        commitEditor();
+        setStatus("Text added.");
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        editor.value = "";
+        commitEditor();
+      }
+    });
+    editor.addEventListener("blur", commitEditor);
+
+    document.querySelector("#selectTool").addEventListener("click", () => setTool("select"));
+    document.querySelector("#textTool").addEventListener("click", () => setTool("text"));
+    document.querySelector("#penTool").addEventListener("click", () => setTool("pen"));
+
+    document.querySelector("#undoButton").addEventListener("click", () => {
+      commitEditor();
+      const last = state.history.pop();
+      if (!last) {
+        setStatus("Nothing to undo.");
+        return;
+      }
+      restore(last);
+      setStatus("Undone.");
+    });
+
+    document.querySelector("#clearButton").addEventListener("click", () => {
+      commitEditor();
+      snapshot();
+      state.textItems = [];
+      state.strokes = [];
+      render();
+      setStatus("Answers cleared.");
+    });
+
+    document.querySelector("#downloadButton").addEventListener("click", () => {
+      commitEditor();
+      const link = document.createElement("a");
+      link.download = "digital-worksheet.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      setStatus("PNG downloaded.");
+    });
+
+    [nameInput, dateInput].forEach((input) => input.addEventListener("input", render));
+
+    window.addEventListener("resize", () => {
+      if (editor.style.display !== "none") {
+        const item = state.textItems.find((entry) => entry.id === state.activeTextId);
+        if (item) beginEditor(item);
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
