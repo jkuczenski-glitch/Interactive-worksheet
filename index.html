@@ -503,17 +503,16 @@
     // Adjust these two values if Canvas/GitHub renders the answer boxes slightly off.
     // Positive X moves boxes right. Positive Y moves boxes down.
     const answerOffsetX = 0;
-    const answerOffsetY = 25;
-
+    const answerOffsetY = 20;
     const answerAreas = [
-      { id: "answer1", x: 135, y: 513, width: 1430, height: 100 },
-      { id: "answer2", x: 135, y: 919, width: 1430, height: 122 },
-      { id: "answer3", x: 135, y: 1256, width: 1430, height: 105 },
-      { id: "answer4", x: 135, y: 1698, width: 1430, height: 122 },
-      { id: "answer5", x: 135, y: 1985, width: 1430, height: 100 },
-      { id: "answer6", x: 135, y: 2397, width: 1430, height: 105 },
-      { id: "answer7", x: 135, y: 2714, width: 1430, height: 105 },
-      { id: "answer8", x: 135, y: 3170, width: 1430, height: 145 }
+      { id: "answer1", x: 135, y: 513, width: 1430, height: 100, offsetX: 0, offsetY: 0 },
+      { id: "answer2", x: 135, y: 919, width: 1430, height: 122, offsetX: 0, offsetY: 0 },
+      { id: "answer3", x: 135, y: 1256, width: 1430, height: 105, offsetX: 0, offsetY: 45 },
+      { id: "answer4", x: 135, y: 1698, width: 1430, height: 122, offsetX: 0, offsetY: 0 },
+      { id: "answer5", x: 135, y: 1985, width: 1430, height: 100, offsetX: 0, offsetY: 45 },
+      { id: "answer6", x: 135, y: 2397, width: 1430, height: 105, offsetX: 0, offsetY: 0 },
+      { id: "answer7", x: 135, y: 2714, width: 1430, height: 105, offsetX: 0, offsetY: 15 },
+      { id: "answer8", x: 135, y: 3150, width: 1430, height: 145, offsetX: 0, offsetY: 25 }
     ];
 
     function setStatus(message) {
